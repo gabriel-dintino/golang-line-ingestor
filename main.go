@@ -1,22 +1,33 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
+	"runtime"
 
-	configuration "github.com/golang-line-ingestor/configurations"
-	handlers "github.com/golang-line-ingestor/handlers"
+	"fmt"
+
+	"github.com/gin-gonic/gin"
+	configurations "github.com/golang-line-ingestor/configurations"
+	routers "github.com/golang-line-ingestor/routers"
 )
 
-func main() {
-	http.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "pong!")
-	})
-	http.HandleFunc("/start", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Processing...")
-		handlers.Processor()
+var router *gin.Engine
 
-	})
-	fmt.Println(fmt.Sprintf("Server started at: %d", configuration.Port))
-	http.ListenAndServe(fmt.Sprintf(":%d", configuration.Port), nil)
+func main() {
+	configureRouter()
+	//mapUrlsToControllers()
+	router.Run(fmt.Sprintf(":%s", configurations.Port))
 }
+
+func configureRouter() {
+	runtime.GOMAXPROCS(runtime.NumCPU())
+	router = gin.Default()
+	routers.GetRoutersV1(router)
+	//pprof.Register(router, nil)
+	//router.NoRoute(noRouteHandler)
+	router.RedirectFixedPath = false
+	router.RedirectTrailingSlash = false
+}
+
+//func noRouteHandler(c *gin.Context) {
+//	mlhandlers.RespondError(c, apierrors.NewNotFoundApiError(fmt.Sprintf("Resource %s not found.", c.Request.URL.Path)))
+//}

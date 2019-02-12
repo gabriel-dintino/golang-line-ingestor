@@ -2,26 +2,31 @@ package handlers
 
 import (
 	"bufio"
-	"fmt"
 	"log"
 	"os"
+
+	configurations "github.com/golang-line-ingestor/configurations"
+	models "github.com/golang-line-ingestor/models"
+	logger "github.com/sirupsen/logrus"
+	resty "gopkg.in/resty.v1"
 )
 
 func Processor() {
-	file, err := os.Open("./files/SRV_LINEAS_DESA.DAT")
+	file, err := os.Open(configurations.LineFileFullpath)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
-	i := 1
-	for scanner.Scan() {
-		fmt.Println(fmt.Sprintf("%d - %s", i, scanner.Text()))
-		i++
-	}
 
-	if err := scanner.Err(); err != nil {
-		log.Fatal(err)
+	for scanner.Scan() {
+		data := models.SDLRequest{Data: scanner.Text()}
+		_, err := resty.R().
+			SetBody(data).
+			Post(configurations.SDLEndpoint)
+		if err != nil {
+			logger.Error(data)
+		}
 	}
 }
